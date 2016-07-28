@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+//指令说明：httpget url -o -j -k
+//－o 输出对象
+//－j 输出json String
+//－k 输出json对象，可循环输入key获取value值，数组用索引0..来获取，支持多层获取
+//eg： user.name 获取user的name，user.brothers.0：获取第一个兄弟信息 
+var http = require('http'),
+	jsonObj = null;
+    jsonStr = "";
+function httpGet(url){
+    jsonStr = "";
+    http.get(url, function(res){
+             res.on('data', function(chunk){
+                    jsonStr += chunk
+                    });
+             res.on('end', function(){
+                    console.log("请求url：\n" + url);
+                    console.log("返回数据：");
+                    // console.log(JSON.stringify(JSON.parse(data)));
+                    jsonObj =  JSON.parse(jsonStr);
+                    logData();
+                    });
+             res.on('error', function(e){
+                    console.log("请求url：\n" + url);
+                    console.log("发生异常：\n" + e.message);
+                    });
+             }).on('error', function(e) {
+                   console.log("请求url：\n" + url);
+                   console.log("发生异常：\n"+e);
+                   });
+}
+
+httpGet(process.argv[2]);
+var para = process.argv;
+function logData(){
+  for (var i = para.length - 1; i >= 0; i--) {
+      if (para[i] == "-j") {
+        console.log(jsonStr);
+    }else if (para[i] == "-o" || para[i] == "-k") {
+        console.log(jsonObj);
+    }
+  }
+}
+
+
+for (var i = para.length - 1; i >= 0; i--) {
+  if (para[i] == "-k") {
+
+process.stdin.resume();
+process.stdin.on('data', function(data) {
+  try {
+    // parse the input data into a number
+   var key = data.toString();
+   key = key.substring(0,key.length-1);
+    var keys=key.split(".");
+    var value = jsonObj;
+    for (var i = 0; i < keys.length ; i++) {
+      value = value[keys[i]];
+    }
+   console.log(value);
+  } catch(err) {
+    process.stderr.write(err.message + "\n"); }
+});
+  }
+}
